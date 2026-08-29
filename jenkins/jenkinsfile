@@ -1,0 +1,66 @@
+pipeline {
+
+    agent any
+
+    stages {
+
+        stage ('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Imtiyaj5791/cloud-native-ecommerce-devops.git'
+            }
+        }
+
+        stage ('Build') {
+            steps {
+                echo 'Building CloudMart application'
+                sh 'ls -la services'
+            }
+        }
+
+        stage ('Test') {
+            steps {
+                echo 'Running application tests'
+            }
+        }
+
+        stage ('Docker Build') {
+            steps {
+                sh 'docker build -t order-service:v1 services/order-service'
+                sh 'docker build -t inventory-service:v1 services/inventory-service'
+                sh 'docker build -t payment-service:v1 services/payment-service'
+                sh 'docker build -t cloudmart-frontend:v1 frontend'
+            }
+        }
+
+        stage ('Trivy Scan') {
+            steps {
+                sh 'trivy image order-service:v1'
+                sh 'trivy image inventory-service:v1'
+                sh 'trivy image payment-service:v1'
+                sh 'trivy image cloudmart-frontend:v1'
+            }
+        }
+
+        stage ('Docker Tag') {
+            steps {
+                sh 'docker tag order-service:v1 008826676494.dkr.ecr.ap-south-1.amazonaws.com/cloudmart:order-v1'
+                sh 'docker tag inventory-service:v1 008826676494.dkr.ecr.ap-south-1.amazonaws.com/cloudmart:inventory-v1'
+                sh 'docker tag payment-service:v1 008826676494.dkr.ecr.ap-south-1.amazonaws.com/cloudmart:payment-v1'
+                sh 'docker tag cloudmart-frontend:v1 008826676494.dkr.ecr.ap-south-1.amazonaws.com/cloudmart:frontend-v1'
+            }
+        }
+
+        stage ('ECR Push') {
+            steps {
+                sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 008826676494.dkr.ecr.ap-south-1.amazonaws.com'
+
+                sh 'docker push 008826676494.dkr.ecr.ap-south-1.amazonaws.com/cloudmart:order-v1'
+                sh 'docker push 008826676494.dkr.ecr.ap-south-1.amazonaws.com/cloudmart:inventory-v1'
+                sh 'docker push 008826676494.dkr.ecr.ap-south-1.amazonaws.com/cloudmart:payment-v1'
+                sh 'docker push 008826676494.dkr.ecr.ap-south-1.amazonaws.com/cloudmart:frontend-v1'
+            }
+        }
+
+    }
+}
