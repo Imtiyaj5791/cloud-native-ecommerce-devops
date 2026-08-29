@@ -61,6 +61,12 @@ pipeline {
                 sh 'docker push 008826676494.dkr.ecr.ap-south-1.amazonaws.com/cloudmart:frontend-v1'
             }
         }
+       
+       stage('Kubernetes Deploy') {
+    steps {
+        sh 'kubectl apply -f kubernetes/'
+    }
+}
 
     }
 }
